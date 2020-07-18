@@ -36,7 +36,6 @@ const channels: Channel[] = [
 ];
 
 export const App: FunctionComponent = () => {
-
   const [_channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const promises: Promise<any>[] = [];
@@ -92,7 +91,6 @@ export const App: FunctionComponent = () => {
               <td><img src={c.img} alt={c.username} width="64" height="64" /></td>
               <td><a className="App-link" href={`https://t.me/${c.username.replace('@', '')}`}>{c.username}</a></td>
               <td>{c.subscribers}</td>
-              {}
             </tr>)
             }
           </tbody>
@@ -106,7 +104,7 @@ export const App: FunctionComponent = () => {
 }
 
 
-function compare(a: Channel, b: Channel): number {
+export function compare(a: Channel, b: Channel): number {
   if (a.subscribers < b.subscribers) {
     return 1;
   }
