@@ -1,14 +1,8 @@
-import React, { Component } from 'react';
+import React, { FunctionComponent, useState, useEffect } from 'react';
 import './App.css';
-import TOKEN from './config/token.json';
+import { Channel } from './App.model';
+import { API_KEY } from '../config/conf';
 
-interface Channel {
-  username: string;
-  img: string;
-  subscribers: number;
-}
-
-const API_KEY = TOKEN.API_KEY;
 const channels: Channel[] = [
   { username: '@dminews',                           img: '', subscribers: 0 },
   { username: '@fisicact',                          img: '', subscribers: 0 },
@@ -41,83 +35,85 @@ const channels: Channel[] = [
   { username: '@Spotted_DMI',                       img: '', subscribers: 0 },
 ];
 
-class App extends Component {
+export const App: FunctionComponent = () => {
 
-  constructor(props: any) {
-    super(props);
-    this.state = { channels: null };
-  }
+  const [_channels, setChannels] = useState<Channel[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const promises: Promise<any>[] = [];
+  const promisesPicture: Promise<any>[] = [];
 
-  promises: Promise<any>[] = [];
-  promisesPicture: Promise<any>[] = [];
-
-  compare(a: Channel, b: Channel): number {
-    if (a.subscribers < b.subscribers) {
-      return 1;
-    }
-
-    if (a.subscribers > b.subscribers) {
-      return -1;
-    }
-
-    return 0;
-  }
-
-  componentDidMount(): void {
-    channels.map((c, idx) => this.getChannelMembers(idx));
-    Promise.all(this.promises).then(() => 
-      Promise.all(this.promisesPicture).then(() => {
-        channels.sort(this.compare);
-        this.setState({ channels });
-      })
-    );
-}
-
-  getChannelMembers(idx: number): void {
+  const getChannelMembers = (idx: number): void => {
     // get photo
-    this.promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChat?chat_id=${channels[idx].username}`)
+    promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChat?chat_id=${channels[idx].username}`)
     .then(r => r.json())
     .then((data) => {
 
       // get FILE_PATH
-      this.promisesPicture.push(fetch(`https://api.telegram.org/bot${API_KEY}/getFile?file_id=${data.result.photo.big_file_id}`)
+      promisesPicture.push(fetch(`https://api.telegram.org/bot${API_KEY}/getFile?file_id=${data.result.photo.big_file_id}`)
       .then(res => res.json())
       // update image path
       .then(data => {
         channels[idx].img = `https://api.telegram.org/file/bot${API_KEY}/${data.result.file_path}`;
-        this.setState({ channels });
+        setChannels(channels);
       }));
     }));
 
     // get members per channel
-    this.promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChatMembersCount?chat_id=${channels[idx].username}`)
+    promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChatMembersCount?chat_id=${channels[idx].username}`)
     .then(r => r.json())
     .then((data) => {
       channels[idx].subscribers = data.result;
-      this.setState({ channels });
+      setChannels(channels);
     }));
   }
 
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <table className="App-list">
-            <tbody>
-            { channels.map((c, idx) =>
-              <tr key={idx}>
-                <td><img src={c.img} alt={c.username} width="64" height="64" /></td>
-                <td><a className="App-link" href={`https://t.me/${c.username.replace('@', '')}`}>{c.username}</a></td>
-                <td>{c.subscribers}</td>
-                {}
-              </tr>)
-              }
-            </tbody>
-          </table>
-        </header>
-      </div>
+
+  useEffect((): void => {
+    channels.map((c, idx) => getChannelMembers(idx));
+    Promise.all(promises).then(() => 
+      Promise.all(promisesPicture).then(() => {
+        console.log('finished');
+        channels.sort(compare);
+        setChannels([...channels]);
+        setLoading(true);
+      })
     );
-  }
+  }, []);
+
+  return (
+    <div className="App">
+      <header className="App-header">
+      {
+        loading
+        ? <table className="App-list">
+          <tbody>
+          { _channels.map((c, idx) =>
+            <tr key={idx}>
+              <td><img src={c.img} alt={c.username} width="64" height="64" /></td>
+              <td><a className="App-link" href={`https://t.me/${c.username.replace('@', '')}`}>{c.username}</a></td>
+              <td>{c.subscribers}</td>
+              {}
+            </tr>)
+            }
+          </tbody>
+        </table>
+        : <h2>...loading...</h2>
+    }
+
+      </header>
+    </div>
+  );
 }
 
-export default App;
+
+function compare(a: Channel, b: Channel): number {
+  if (a.subscribers < b.subscribers) {
+    return 1;
+  }
+
+  if (a.subscribers > b.subscribers) {
+    return -1;
+  }
+
+  return 0;
+}
