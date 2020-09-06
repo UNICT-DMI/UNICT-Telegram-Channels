@@ -3,7 +3,7 @@ import './App.css';
 import { Channel } from './App.model';
 import { API_KEY } from '../config/conf';
 
-const channels: Channel[] = [
+export const channels: Channel[] = [
   { username: '@dminews',                           img: '', subscribers: 0 },
   { username: '@fisicact',                          img: '', subscribers: 0 },
   { username: '@dieeinews',                         img: '', subscribers: 0 },
@@ -42,6 +42,7 @@ export const App: FunctionComponent = () => {
   const promisesPicture: Promise<any>[] = [];
 
   const getChannelMembers = (idx: number): void => {
+
     // get photo
     promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChat?chat_id=${channels[idx].username}`)
     .then(r => r.json())
@@ -65,7 +66,6 @@ export const App: FunctionComponent = () => {
       setChannels(channels);
     }));
   }
-
 
   useEffect((): void => {
     channels.map((c, idx) => getChannelMembers(idx));
