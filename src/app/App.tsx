@@ -41,33 +41,36 @@ export const App: FunctionComponent = () => {
   const promises: Promise<any>[] = [];
   const promisesPicture: Promise<any>[] = [];
 
-  const getChannelMembers = (idx: number): void => {
-
-    // get photo
-    promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChat?chat_id=${channels[idx].username}`)
-    .then(r => r.json())
-    .then((data) => {
-
-      // get FILE_PATH
-      promisesPicture.push(fetch(`https://api.telegram.org/bot${API_KEY}/getFile?file_id=${data.result.photo.big_file_id}`)
-      .then(res => res.json())
-      // update image path
-      .then(data => {
-        channels[idx].img = `https://api.telegram.org/file/bot${API_KEY}/${data.result.file_path}`;
+  useEffect(() => {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+  
+    const getChannelMembers = (idx: number): void => {
+  
+      // get photo
+      promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChat?chat_id=${channels[idx].username}`, { signal: signal })
+      .then(r => r.json())
+      .then((data) => {
+  
+        // get FILE_PATH
+        promisesPicture.push(fetch(`https://api.telegram.org/bot${API_KEY}/getFile?file_id=${data.result.photo.big_file_id}`, { signal: signal })
+        .then(res => res.json())
+        // update image path
+        .then(data => {
+          channels[idx].img = `https://api.telegram.org/file/bot${API_KEY}/${data.result.file_path}`;
+          setChannels(channels);
+        }));
+      }));
+  
+      // get members per channel
+      promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChatMembersCount?chat_id=${channels[idx].username}`, { signal: signal })
+      .then(r => r.json())
+      .then((data) => {
+        channels[idx].subscribers = data.result;
         setChannels(channels);
       }));
-    }));
+    }
 
-    // get members per channel
-    promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChatMembersCount?chat_id=${channels[idx].username}`)
-    .then(r => r.json())
-    .then((data) => {
-      channels[idx].subscribers = data.result;
-      setChannels(channels);
-    }));
-  }
-
-  useEffect((): void => {
     channels.map((c, idx) => getChannelMembers(idx));
     Promise.all(promises).then(() => 
       Promise.all(promisesPicture).then(() => {
@@ -75,8 +78,11 @@ export const App: FunctionComponent = () => {
         channels.sort(compare);
         setChannels([...channels]);
         setLoading(true);
+        abortController.abort();
       })
     );
+
+    return () => abortController.abort();
   }, []);
 
   return (

@@ -39,7 +39,7 @@ describe('App', () => {
     expect(linkElement).toBeInTheDocument();
   });
 
-  test('wait http request', async() => {
+  test('wait http request', () => {
     const { getByText } = render(<App />);
     waitForElement(() => getByText(/dminews/i));
   });
