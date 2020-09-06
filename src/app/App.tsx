@@ -59,8 +59,10 @@ export const App: FunctionComponent = () => {
         .then(data => {
           channels[idx].img = `https://api.telegram.org/file/bot${API_KEY}/${data.result.file_path}`;
           setChannels(channels);
-        }));
-      }));
+        })
+        .catch((error) => {}));
+      })
+      .catch((error) => {}));
   
       // get members per channel
       promises.push(fetch(`https://api.telegram.org/bot${API_KEY}/getChatMembersCount?chat_id=${channels[idx].username}`, { signal: signal })
@@ -68,7 +70,7 @@ export const App: FunctionComponent = () => {
       .then((data) => {
         channels[idx].subscribers = data.result;
         setChannels(channels);
-      }));
+      }).catch((error) => {}));
     }
 
     channels.map((c, idx) => getChannelMembers(idx));
